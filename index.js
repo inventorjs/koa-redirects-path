@@ -26,6 +26,7 @@ module.exports =  function({ redirects, onRedirect = async () => {} }) {
         if (Object.keys(query).length > 0) {
             targetUrl = `${destinationPath}?${querystring.stringify(query)}`;
         }
+        targetUrl = targetUrl.substr(0, 4096);
         ctx.status = permanent ? 301 : 302;
         ctx.redirect(targetUrl);
         await onRedirect(ctx, redirect);

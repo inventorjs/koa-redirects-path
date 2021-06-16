@@ -22,5 +22,8 @@
   "homepage": "https://github.com/sunkeysun/koa-redirects-path#readme",
   "dependencies": {
     "path-to-regexp": "^6.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.28.0"
   }
 }

@@ -42,6 +42,15 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return await next();
         }
         const { path } = ctx;
+        if (!ctx.app.redirectsCache) {
+            ctx.app.redirectsCache = {};
+        }
+        if (ctx.app.redirectsCache[path]) {
+            return await doRedirect(ctx, ctx.app.redirectsCache[path]);
+        } else if (ctx.app.redirecsCache[path] === false) {
+            return await next();
+        }
+
         let pathExec = null;
         let redirect = null;
         for (const item of redirectList) {
@@ -53,13 +62,16 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
         }
 
         if (!redirect) {
+            ctx.app.redirectsCache[path] = false;
             return await next();
         }
         if (redirect.parsedDestinationReg.length === 1) {
-            return await doRedirect(ctx, {
+            ctx.app.redirectsCache[path] = {
                 ...redirect,
                 redirectPath: redirect.destination,
-            });
+            };
+
+            return await doRedirect(ctx, ctx.app.redirectsCache[path]);
         }
 
         const params = redirect.parsedSourceReg.reduce((result, reg, index) => {
@@ -72,10 +84,11 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return result;
         }, {});
         const redirectPath = redirect.destinationToPath(params);
-        return await doRedirect(ctx, {
+        ctx.app.redirectsCache[path] = {
             ...redirect,
             redirectPath,
-        });
+        };
+        return await doRedirect(ctx, ctx.app.redirectsCache[path]);
     };
 };
  

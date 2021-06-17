@@ -4,6 +4,8 @@
 const querystring = require('querystring');
 const { pathToRegexp, parse, compile } = require('path-to-regexp');
 
+const MAX_CACHE_SIZE = 100;
+
 module.exports = function ({ redirects, onRedirect = async () => {} }) {
     const redirectList = redirects.map((redirect) => {
         const parsedSourceReg = parse(redirect.source);
@@ -42,12 +44,14 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return await next();
         }
         const { path } = ctx;
-        if (!ctx.app.redirectsCache) {
-            ctx.app.redirectsCache = {};
+        if (!ctx.app.redirectsMap) {
+            ctx.app.redirectsMap = new Map();
+        } else if (ctx.app.redirectsMap.size > MAX_CACHE_SIZE) {
+            ctx.app.redirectsMap.delete(ctx.app.redirectsMap.keys()[0])
         }
-        if (ctx.app.redirectsCache[path]) {
-            return await doRedirect(ctx, ctx.app.redirectsCache[path]);
-        } else if (ctx.app.redirectsCache[path] === false) {
+        if (ctx.app.redirectsMap.has(path)) {
+            return await doRedirect(ctx, ctx.app.redirectsMap.get(path));
+        } else if (ctx.app.redirectsMap.get(path) === null) {
             return await next();
         }
 
@@ -62,16 +66,17 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
         }
 
         if (!redirect) {
-            ctx.app.redirectsCache[path] = false;
+            ctx.app.redirectsMap.set(path, null);
             return await next();
         }
         if (redirect.parsedDestinationReg.length === 1) {
-            ctx.app.redirectsCache[path] = {
+            redirect = {
                 ...redirect,
                 redirectPath: redirect.destination,
             };
+            ctx.app.redirectsMap.set(path, redirect);
 
-            return await doRedirect(ctx, ctx.app.redirectsCache[path]);
+            return await doRedirect(ctx, redirect);
         }
 
         const params = redirect.parsedSourceReg.reduce((result, reg, index) => {
@@ -84,11 +89,9 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return result;
         }, {});
         const redirectPath = redirect.destinationToPath(params);
-        ctx.app.redirectsCache[path] = {
-            ...redirect,
-            redirectPath,
-        };
-        return await doRedirect(ctx, ctx.app.redirectsCache[path]);
+        redirect = { ...redirect, redirectPath };
+        ctx.app.redirectsMap.set(path, redirect)
+        return await doRedirect(ctx, redirect);
     };
 };
  

@@ -1,6 +1,6 @@
 module.exports = {
     env: { node: true },
-    parserOptions: { ecmaVersion: 2021 },
+    parserOptions: { ecmaVersion: 'es-next' },
     extends: 'eslint:recommended',
     rules: {
         semi: ['error', 'always'],

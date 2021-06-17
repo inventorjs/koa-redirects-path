@@ -47,7 +47,7 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
         }
         if (ctx.app.redirectsCache[path]) {
             return await doRedirect(ctx, ctx.app.redirectsCache[path]);
-        } else if (ctx.app.redirecsCache[path] === false) {
+        } else if (ctx.app.redirectsCache[path] === false) {
             return await next();
         }
 

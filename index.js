@@ -44,6 +44,9 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return await next();
         }
         const { path } = ctx;
+        let pathExec = null;
+        let redirect = null
+
         if (!ctx.app.redirectsPathMap) {
             ctx.app.redirectsPathMap = new Map();
         } else if (ctx.app.redirectsPathMap.size > MAX_CACHE_SIZE) {
@@ -57,8 +60,6 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return await doRedirect(ctx, redirect);
         }
 
-        let pathExec = null;
-        let redirect = null;
         for (const item of redirectList) {
             pathExec = item.sourceReg.exec(path);
             if (pathExec) {

@@ -1,6 +1,6 @@
 {
   "name": "koa-redirects-path",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "koa-redirects-path middleware",
   "main": "index.js",
   "scripts": {

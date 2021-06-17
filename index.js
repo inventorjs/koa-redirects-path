@@ -4,7 +4,7 @@
 const querystring = require('querystring');
 const { pathToRegexp, parse, compile } = require('path-to-regexp');
 
-const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_SIZE = 1024;
 
 module.exports = function ({ redirects, onRedirect = async () => {} }) {
     const redirectList = redirects.map((redirect) => {
@@ -44,15 +44,17 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             return await next();
         }
         const { path } = ctx;
-        if (!ctx.app.redirectsMap) {
-            ctx.app.redirectsMap = new Map();
-        } else if (ctx.app.redirectsMap.size > MAX_CACHE_SIZE) {
-            ctx.app.redirectsMap.delete(ctx.app.redirectsMap.keys()[0])
+        if (!ctx.app.redirectsPathMap) {
+            ctx.app.redirectsPathMap = new Map();
+        } else if (ctx.app.redirectsPathMap.size > MAX_CACHE_SIZE) {
+            ctx.app.redirectsPathMap.delete(ctx.app.redirectsPathMap.keys()[0])
         }
-        if (ctx.app.redirectsMap.has(path)) {
-            return await doRedirect(ctx, ctx.app.redirectsMap.get(path));
-        } else if (ctx.app.redirectsMap.get(path) === null) {
-            return await next();
+        if (ctx.app.redirectsPathMap.has(path)) {
+            redirect = ctx.app.redirectsPathMap.get(path);
+            if (redirect === null) {
+                return await next();
+            }
+            return await doRedirect(ctx, redirect);
         }
 
         let pathExec = null;
@@ -66,7 +68,7 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
         }
 
         if (!redirect) {
-            ctx.app.redirectsMap.set(path, null);
+            ctx.app.redirectsPathMap.set(path, null);
             return await next();
         }
         if (redirect.parsedDestinationReg.length === 1) {
@@ -74,7 +76,7 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
                 ...redirect,
                 redirectPath: redirect.destination,
             };
-            ctx.app.redirectsMap.set(path, redirect);
+            ctx.app.redirectsPathMap.set(path, redirect);
 
             return await doRedirect(ctx, redirect);
         }
@@ -90,7 +92,7 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
         }, {});
         const redirectPath = redirect.destinationToPath(params);
         redirect = { ...redirect, redirectPath };
-        ctx.app.redirectsMap.set(path, redirect)
+        ctx.app.redirectsPathMap.set(path, redirect)
         return await doRedirect(ctx, redirect);
     };
 };

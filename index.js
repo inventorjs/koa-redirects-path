@@ -91,7 +91,7 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
             }
             return result;
         }, {});
-        const redirectPath = redirect.destinationToPath(params);
+        const redirectPath = decodeURIComponent(redirect.destinationToPath(params));
         redirect = { ...redirect, redirectPath };
         ctx.app.redirectsPathMap.set(path, redirect)
         return await doRedirect(ctx, redirect);

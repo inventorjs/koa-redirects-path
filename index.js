@@ -6,7 +6,7 @@ const { pathToRegexp, parse, compile } = require('path-to-regexp');
 
 const MAX_CACHE_SIZE = 1024;
 
-module.exports = function ({ redirects, onRedirect = async () => {} }) {
+module.exports = function ({ redirects, trailingSlash = false, onRedirect = async () => {} }) {
     const redirectList = redirects.map((redirect) => {
         const parsedSourceReg = parse(redirect.source);
         const isRegPath = parsedSourceReg.length > 1;
@@ -40,10 +40,14 @@ module.exports = function ({ redirects, onRedirect = async () => {} }) {
     }
 
     return async function redirectsPath(ctx, next) {
+        const { path } = ctx;
+        if (!trailingSlash && path.endsWith('/')) {
+            return await doRedirect(ctx, { redirectPath: path.replace(/\/+$/, '') })
+        }
+
         if (redirectList.length === 0) {
             return await next();
         }
-        const { path } = ctx;
         let pathExec = null;
         let redirect = null
 

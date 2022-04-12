@@ -41,7 +41,7 @@ module.exports = function ({ redirects, maxUrlLength = 1024, trailingSlash = fal
 
     return async function redirectsPath(ctx, next) {
         const { path } = ctx;
-        if (!trailingSlash && path.endsWith('/')) {
+        if (!trailingSlash && path !== '/' && path.endsWith('/')) {
             return await doRedirect(ctx, { redirectPath: path.replace(/\/+$/, '') })
         }
 
